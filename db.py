@@ -1,6 +1,6 @@
 from pymongo.mongo_client import MongoClient
 from settings import config
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from enum import Enum
 
 Period = Enum('Period', ['DAY','WEEK', 'MONTH', 'YEAR', 'ALL'])
