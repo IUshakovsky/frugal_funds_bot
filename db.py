@@ -1,7 +1,9 @@
 from pymongo.mongo_client import MongoClient
-from bson.objectid import ObjectId
 from settings import config
 from datetime import datetime, timezone
+from enum import Enum
+
+Period = Enum('Period', ['DAY','WEEK', 'MONTH', 'YEAR', 'ALL'])
 
 class Db():
 
@@ -23,34 +25,126 @@ class Db():
                 'user_id': user_id,
                 'name': cat_name 
             }
-            self.db['categories'].insert_one(rec)
-            # вернуть бул
+        self.db['categories'].insert_one(rec)
+        return True
     
-    def add_record(self, cat_id: str, user_id: int, amnt: int ) -> bool:
+    def add_record(self, cat_name: str, user_id: int, amnt: int ) -> bool:
         rec = {
-            'userid': user_id,
-            'catid': cat_id,
-            'date': datetime.now(tz=timezone.utc),
+            'user_id': user_id,
+            'cat_name': cat_name,
+            'date': datetime.now(), #(tz=timezone.utc),
             'amnt': amnt
         }
         self.db['records'].insert_one(rec)
-        # вернуть бул
+        return True
         
-    def delete_category(self, cat_id: str) -> bool:
+    def delete_category(self, user_id: int, cat_name: str) -> bool:
         # delete all records
-        self.db['records'].delete_many({'catid':cat_id })
+        self.db['records'].delete_many({'user_id':user_id, 'cat_name':cat_name })
         
         # delete category itself
         deleted = True
-        res = self.db['categories'].delete_one({'_id': ObjectId(cat_id) })
+        res = self.db['categories'].delete_one({'user_id':user_id,'name': cat_name })
         if res.deleted_count == 0:
             deleted = False
             
         return deleted
     
-    def get_stats( period: enumerate, detailes: bool = False ) -> str:
-        pass
-    
-    
+    def get_stats( self, period: Period, user_id: int, detailed: bool = False ) -> list:
+        pipeline = []
+        
+        match period:
+            case Period.DAY:
+                start_of_day = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+                pipeline = [
+                    {
+                        "$match": {
+                            "date": {"$gte": start_of_day},
+                            "user_id": {"$eq": user_id } 
+                        }
+                    },
+                    {
+                        "$group": {
+                            "_id": None,
+                            "totalValue": {"$sum": "$amnt"}
+                        }
+                    }
+                ]
 
-db = Db()
+            case Period.WEEK:
+                current_date = datetime.now()
+                start_of_week = (current_date - timedelta(days=current_date.weekday()) ).replace(hour=0, minute=0, second=0, microsecond=0)
+                pipeline = [
+                    {
+                        "$match": {
+                            "date": {"$gte": start_of_week},
+                            "user_id": {"$eq": user_id } 
+                        }
+                    },
+                    {
+                        "$group": {
+                            "_id": None,
+                            "totalValue": {"$sum": "$amnt"}
+                        }
+                    }
+            ]
+            case Period.MONTH:
+                start_of_month = datetime.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+                pipeline = [
+                    {
+                        "$match": {
+                            "date": {"$gte": start_of_month},
+                            "user_id": {"$eq": user_id } 
+                        }
+                    },
+                    {
+                        "$group": {
+                            "_id": {
+                                "year": {"$year": "$date"},
+                                "month": {"$month": "$date"}
+                            }, 
+                            "totalValue": {"$sum": "$amnt"}
+                        }
+                    }
+            ]
+            
+            case Period.YEAR:
+                current_year = datetime.utcnow().year
+                pipeline = [
+                    {
+                        "$match": {
+                            "date": {"$gte": datetime(current_year, 1, 1), "$lt": datetime(current_year + 1, 1, 1)},
+                            "user_id": {"$eq": user_id} 
+                        }
+                    },
+                    {
+                        "$group": {
+                            "_id": {
+                                "year": {"$year": "$date"},
+                                "month": {"$month": "$date"}
+                            },
+                            "totalValue": {"$sum": "$value"}
+                        }
+                    }
+                ]
+            case Period.ALL:
+                pipeline = [
+                    {
+                        "$match": {
+                            "user_id": {"$eq": user_id} 
+                        }
+                    },
+                    {
+                        "$group": {
+                            "_id": {
+                                "year": {"$year": "$date"},
+                                "month": {"$month": "$date"}
+                            },
+                            "totalValue": {"$sum": "$value"}
+                        }
+                    }
+                ]
+        
+        result = list(self.db['records'].aggregate(pipeline))
+        return result
+    
