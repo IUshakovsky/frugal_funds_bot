@@ -16,19 +16,14 @@ class Db():
         cats = coll.find({'user_id': user_id})
         return { str(cat['_id']): cat['name'] for cat in cats } 
 
-    def add_category(self, cat_name: str, user_id: int) -> bool:
-        if self.db['categories'].find_one({"name":cat_name}):
-            return False
-        
-        else:
-            rec = {
+    def add_category(self, cat_name: str, user_id: int) -> None:
+        rec = {
                 'user_id': user_id,
                 'name': cat_name 
-            }
+        }
         self.db['categories'].insert_one(rec)
-        return True
     
-    def add_record(self, cat_name: str, user_id: int, amnt: int ) -> bool:
+    def add_record(self, cat_name: str, user_id: int, amnt: int ) -> None:
         rec = {
             'user_id': user_id,
             'cat_name': cat_name,
@@ -36,8 +31,7 @@ class Db():
             'amnt': amnt
         }
         self.db['records'].insert_one(rec)
-        return True
-        
+       
     def delete_category(self, user_id: int, cat_name: str) -> bool:
         # delete all records
         self.db['records'].delete_many({'user_id':user_id, 'cat_name':cat_name })
@@ -147,4 +141,5 @@ class Db():
         
         result = list(self.db['records'].aggregate(pipeline))
         return result
-    
+
+db = Db()
