@@ -1,5 +1,5 @@
 import asyncio
-from aiogram import Bot, Dispatcher, types, F
+from aiogram import Bot, Dispatcher, types, F, BaseMiddleware
 from aiogram.utils.keyboard import InlineKeyboardBuilder, ReplyKeyboardBuilder
 from aiogram.filters.command import Command
 from aiogram.fsm.state import State, StatesGroup
@@ -8,8 +8,16 @@ from aiogram.fsm.context import FSMContext
 from settings import config
 from db import db, Period
 
+# class AccessMiddleware(BaseMiddleware):
+#     async def on_pre_process_message(self, message: types.Message, data: dict):
+#         if message.from_user.id not in config.allowed_users:
+#             await message.answer("Go away")
+#             return BaseMiddleware.STOP_PROCESSING
+
 bot = Bot(token=config.bot_token.get_secret_value())
 dp = Dispatcher()
+# dp.update.outer_middleware(AccessMiddleware())
+# dp.middleware.setup(AccessMiddleware())
 
 def get_confirmation_kb(confirm_msg: str = '?',  add_cancel: bool = True ) -> types.ReplyKeyboardMarkup:
     kb = [[types.KeyboardButton(text="Да"), 
@@ -23,8 +31,16 @@ def get_confirmation_kb(confirm_msg: str = '?',  add_cancel: bool = True ) -> ty
 
     return keyboard
 
+def create_kb_builder_periods() ->InlineKeyboardBuilder:
+    builder = InlineKeyboardBuilder()
+    for i, period_text in enumerate(['День','Неделя','Месяц','Год','Все время'], start=1):
+        builder.add(types.InlineKeyboardButton(
+                                        text = period_text,
+                                        callback_data = str(i) ))
+    builder.adjust(3)
+    return builder
 
-def create_kb_builder(user_id: int) -> InlineKeyboardBuilder:
+def create_kb_builder_cats(user_id: int) -> InlineKeyboardBuilder:
     cats = db.get_categories(user_id) 
     builder = InlineKeyboardBuilder()
     for cat in cats.items():
@@ -37,8 +53,7 @@ def create_kb_builder(user_id: int) -> InlineKeyboardBuilder:
 
 @dp.message(Command("start"))
 async def start(message: types.Message):
-    # Create a simple menu using InlineKeyboardMarkup and InlineKeyboardButton
-    await message.answer("Welcome to the Expense Tracker Bot")
+    await message.answer('\_(oO)_/')
 
 # Adding category
 class AddingCategory(StatesGroup):
@@ -96,7 +111,7 @@ async def cmd_add(message: types.Message, state: FSMContext):
 @dp.message(AddingRecord.inputing_amount, F.text.isdigit())
 async def handle_input_amnt(message: types.Message, state: FSMContext):
     await state.update_data(input = message.text)
-    await message.answer(text='Куда столько?', reply_markup=create_kb_builder(message.from_user.id).as_markup(resize_keyboard=True))
+    await message.answer(text='Куда столько?', reply_markup=create_kb_builder_cats(message.from_user.id).as_markup(resize_keyboard=True))
     await state.set_state(AddingRecord.choosing_category)
 
 @dp.message(AddingRecord.inputing_amount)
@@ -131,7 +146,7 @@ async def cmd_del_cat(message: types.Message, state: FSMContext):
         await message.answer(text='Нечего удалять')
         await state.clear()
     else:
-        await message.answer(text='Что удаляем?', reply_markup=create_kb_builder(message.from_user.id).as_markup(resize_keyboard=True))
+        await message.answer(text='Что удаляем?', reply_markup=create_kb_builder_cats(message.from_user.id).as_markup(resize_keyboard=True))
         await state.set_state(DeletingCategory.choosing_category)
 
 @dp.callback_query( DeletingCategory.choosing_category )
@@ -168,13 +183,18 @@ async def handle_decline_del_cat_name(message: types.Message, state: FSMContext)
 
 # Getting stats
 @dp.message(Command("quick_stat"))
-async def get_quick_stat(message: types.Message):
+async def cmd_get_quick_stat(message: types.Message):
     stats = db.get_stats(Period.MONTH, message.from_user.id)
-    await message.answer(f'С начала месяца {str(stats[0]['totalValue'])}')
+    await message.answer(f'С начала месяца {str(stats[0]["totalValue"])}')
     
 class GettingStats(StatesGroup):
     choosing_period = State()
     choosing_type = State()
+    
+@dp.message(Command('stat'))
+async def cmd_get_stat(message: types.Message, state: FSMContext):
+    await message.answer(text='За какой период?', reply_markup=create_kb_builder_periods().as_markup(resize_keyboard=True))
+    await state.set_state(DeletingCategory.choosing_category)
 
 async def main():
     await dp.start_polling(bot)

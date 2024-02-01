@@ -6,6 +6,7 @@ class Settings(BaseSettings):
     mongo_uri: str
     bot_username: str
     db: str
+    allowed_users: list
 
     model_config = SettingsConfigDict(env_file='.env', env_file_encoding='utf-8')
 
