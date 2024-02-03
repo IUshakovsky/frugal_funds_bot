@@ -4,20 +4,31 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder, ReplyKeyboardBuilder
 from aiogram.filters.command import Command
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
+from typing import Callable, Dict, Any, Awaitable
+from aiogram import BaseMiddleware
+from aiogram.types import TelegramObject
 
 from settings import config
 from db import db, Period
 
-# class AccessMiddleware(BaseMiddleware):
-#     async def on_pre_process_message(self, message: types.Message, data: dict):
-#         if message.from_user.id not in config.allowed_users:
-#             await message.answer("Go away")
-#             return BaseMiddleware.STOP_PROCESSING
+# Check user 
+class CheckUserMiddleware(BaseMiddleware):
+    async def __call__(
+        self,
+        handler: Callable[[TelegramObject, Dict[str, Any]], Awaitable[Any]],
+        event: TelegramObject,
+        data: Dict[str, Any]
+    ) -> Any:
+        from_user = data['event_from_user'].id
+        if from_user in config.allowed_users:
+            return await handler(event, data) 
+        else:
+            return None
+        
 
 bot = Bot(token=config.bot_token.get_secret_value())
 dp = Dispatcher()
-# dp.update.outer_middleware(AccessMiddleware())
-# dp.middleware.setup(AccessMiddleware())
+dp.update.outer_middleware(CheckUserMiddleware())
 
 def get_confirmation_kb(confirm_msg: str = '?',  add_cancel: bool = True ) -> types.ReplyKeyboardMarkup:
     kb = [[types.KeyboardButton(text="Да"), 
