@@ -1,11 +1,10 @@
 import asyncio
 from aiogram import Bot, Dispatcher, types, F, BaseMiddleware
-from aiogram.utils.keyboard import InlineKeyboardBuilder, ReplyKeyboardBuilder
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.filters.command import Command
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
 from typing import Callable, Dict, Any, Awaitable
-from aiogram import BaseMiddleware
 from aiogram.types import TelegramObject
 
 from settings import config
@@ -189,8 +188,8 @@ async def handle_confirm_del_cat_name(message: types.Message, state: FSMContext)
 
 @dp.message(DeletingCategory.confirmation, F.text == 'Нет')
 async def handle_decline_del_cat_name(message: types.Message, state: FSMContext):
-    await message.answer('Ок, забыли', reply_markup=types.ReplyKeyboardRemove())
     await state.clear()
+    await message.answer('Ок, забыли', reply_markup=types.ReplyKeyboardRemove())
 
 # Getting stats
 @dp.message(Command("quick_stat"))
@@ -202,10 +201,21 @@ class GettingStats(StatesGroup):
     choosing_period = State()
     choosing_type = State()
     
-@dp.message(Command('stat'))
+@dp.message(Command('get_stat'))
 async def cmd_get_stat(message: types.Message, state: FSMContext):
     await message.answer(text='За какой период?', reply_markup=create_kb_builder_periods().as_markup(resize_keyboard=True))
-    await state.set_state(DeletingCategory.choosing_category)
+    await state.set_state(GettingStats.choosing_period)
+
+@dp.callback_query( GettingStats.choosing_period )
+async def handle_stats_period_chosen(callback: types.CallbackQuery, state: FSMContext):
+    period = callback.data
+    if period not in set(str(p.value) for p in Period):
+        await callback.answer('Кнопку нажми 🤦🏻‍♂️')    
+        return
+    
+    await state.update_data(period=period)
+    await state.set_state(GettingStats.choosing_type)
+
 
 async def main():
     await dp.start_polling(bot)
