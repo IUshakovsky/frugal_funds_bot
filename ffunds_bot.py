@@ -228,7 +228,7 @@ async def handle_stats_period_chosen(callback: types.CallbackQuery, state: FSMCo
 async def handle_stats_type_chosen(callback: types.CallbackQuery, state: FSMContext):
     detailed = bool(callback.data)
     state_data = await state.get_data()
-    stats = db.get_stats( period = state_data['period'],
+    stats = db.get_stats( period = Period(int(state_data['period'])),
                           user_id = callback.from_user.id,
                           detailed = detailed )
     
