@@ -43,11 +43,11 @@ def get_confirmation_kb(confirm_msg: str = '?',  add_cancel: bool = True ) -> ty
 
 def create_kb_builder_periods() ->InlineKeyboardBuilder:
     builder = InlineKeyboardBuilder()
-    for i, period_text in enumerate(['День','Неделя','Месяц','Год','Все время'], start=1):
+    for i, period_text in enumerate(['День','Неделя','Месяц','Год','Все'], start=1):
         builder.add(types.InlineKeyboardButton(
                                         text = period_text,
                                         callback_data = str(i) ))
-    builder.adjust(3)
+    builder.adjust(5)
     return builder
 
 def create_kb_builder_cats(user_id: int) -> InlineKeyboardBuilder:
@@ -60,6 +60,12 @@ def create_kb_builder_cats(user_id: int) -> InlineKeyboardBuilder:
     builder.adjust(3)
     return builder
 
+def create_kb_builder_detailed() -> InlineKeyboardBuilder:
+    builder = InlineKeyboardBuilder()
+    builder.add(types.InlineKeyboardButton(text = 'Кратко',callback_data = '0'))
+    builder.add(types.InlineKeyboardButton(text = 'Подробно',callback_data = '1'))
+    builder.adjust(2)
+    return builder
 
 @dp.message(Command("start"))
 async def start(message: types.Message):
@@ -195,7 +201,12 @@ async def handle_decline_del_cat_name(message: types.Message, state: FSMContext)
 @dp.message(Command("quick_stat"))
 async def cmd_get_quick_stat(message: types.Message):
     stats = db.get_stats(Period.MONTH, message.from_user.id)
-    await message.answer(f'С начала месяца {str(stats[0]["totalValue"])}')
+    msg = ''
+    if len(stats) > 0:
+        msg = f'С начала месяца {str(stats[0]["totalValue"])}'
+    else:
+        msg = 'Пока не было расходов'
+    await message.answer(msg)
     
 class GettingStats(StatesGroup):
     choosing_period = State()
@@ -203,18 +214,26 @@ class GettingStats(StatesGroup):
     
 @dp.message(Command('get_stat'))
 async def cmd_get_stat(message: types.Message, state: FSMContext):
-    await message.answer(text='За какой период?', reply_markup=create_kb_builder_periods().as_markup(resize_keyboard=True))
+    await message.answer(text='... ❓ ', reply_markup=create_kb_builder_periods().as_markup(resize_keyboard=False))
     await state.set_state(GettingStats.choosing_period)
 
 @dp.callback_query( GettingStats.choosing_period )
 async def handle_stats_period_chosen(callback: types.CallbackQuery, state: FSMContext):
     period = callback.data
-    if period not in set(str(p.value) for p in Period):
-        await callback.answer('Кнопку нажми 🤦🏻‍♂️')    
-        return
-    
     await state.update_data(period=period)
     await state.set_state(GettingStats.choosing_type)
+    await callback.message.edit_reply_markup(reply_markup=create_kb_builder_detailed().as_markup())
+
+@dp.callback_query( GettingStats.choosing_type )
+async def handle_stats_type_chosen(callback: types.CallbackQuery, state: FSMContext):
+    detailed = bool(callback.data)
+    state_data = await state.get_data()
+    stats = db.get_stats( period = state_data['period'],
+                          user_id = callback.from_user.id,
+                          detailed = detailed )
+    
+    await state.clear()
+    await callback.message.edit_text(str(stats))
 
 
 async def main():

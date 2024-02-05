@@ -5,6 +5,7 @@ from enum import Enum
 
 Period = Enum('Period', ['DAY','WEEK', 'MONTH', 'YEAR', 'ALL'])
 
+
 class Db():
 
     def __init__(self) -> None:
