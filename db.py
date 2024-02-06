@@ -118,7 +118,7 @@ class Db():
                                 "year": {"$year": "$date"},
                                 "month": {"$month": "$date"}
                             },
-                            "totalValue": {"$sum": "$value"}
+                            "totalValue": {"$sum": "$amnt"}
                         }
                     }
                 ]
@@ -135,7 +135,7 @@ class Db():
                                 "year": {"$year": "$date"},
                                 "month": {"$month": "$date"}
                             },
-                            "totalValue": {"$sum": "$value"}
+                            "totalValue": {"$sum": "$amnt"}
                         }
                     }
                 ]
@@ -144,3 +144,5 @@ class Db():
         return result
 
 db = Db()
+
+print(db.get_stats(Period(4),367113276, True))
