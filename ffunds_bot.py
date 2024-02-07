@@ -214,7 +214,7 @@ class GettingStats(StatesGroup):
     
 @dp.message(Command('get_stat'))
 async def cmd_get_stat(message: types.Message, state: FSMContext):
-    await message.answer(text='... ❓ ', reply_markup=create_kb_builder_periods().as_markup(resize_keyboard=False))
+    await message.answer(text='... ❓ ', reply_markup=create_kb_builder_periods().as_markup(resize_keyboard=True))
     await state.set_state(GettingStats.choosing_period)
 
 @dp.callback_query( GettingStats.choosing_period )
@@ -222,7 +222,7 @@ async def handle_stats_period_chosen(callback: types.CallbackQuery, state: FSMCo
     period = callback.data
     await state.update_data(period=period)
     await state.set_state(GettingStats.choosing_type)
-    await callback.message.edit_reply_markup(reply_markup=create_kb_builder_detailed().as_markup())
+    await callback.message.edit_reply_markup(reply_markup=create_kb_builder_detailed().as_markup(resize_keyboard=True))
 
 @dp.callback_query( GettingStats.choosing_type )
 async def handle_stats_type_chosen(callback: types.CallbackQuery, state: FSMContext):

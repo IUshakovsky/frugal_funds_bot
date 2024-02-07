@@ -65,6 +65,10 @@ class Db():
                         }
                     }
                 ]
+            
+                if detailed:
+                    pipeline[1]["$group"]["_id"] = {"cat_name":"$cat_name"}
+                
 
             case Period.WEEK:
                 current_date = datetime.now()
@@ -82,7 +86,10 @@ class Db():
                             "totalValue": {"$sum": "$amnt"}
                         }
                     }
-            ]
+                ]
+                if detailed:
+                    pipeline[1]["$group"]["_id"] = {"cat_name":"$cat_name"}
+                    
             case Period.MONTH:
                 start_of_month = datetime.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
                 pipeline = [
@@ -101,7 +108,9 @@ class Db():
                             "totalValue": {"$sum": "$amnt"}
                         }
                     }
-            ]
+                ]
+                if detailed:
+                    pipeline[1]["$group"]["_id"]["cat_name"] = "$cat_name"  
             
             case Period.YEAR:
                 current_year = datetime.utcnow().year
@@ -122,6 +131,9 @@ class Db():
                         }
                     }
                 ]
+                pipeline[1]["$group"]["_id"]["cat_name"] = "$cat_name"  
+                
+                
             case Period.ALL:
                 pipeline = [
                     {
@@ -139,10 +151,9 @@ class Db():
                         }
                     }
                 ]
+                pipeline[1]["$group"]["_id"]["cat_name"] = "$cat_name"  
         
         result = list(self.db['records'].aggregate(pipeline))
         return result
 
 db = Db()
-
-print(db.get_stats(Period(4),367113276, True))
