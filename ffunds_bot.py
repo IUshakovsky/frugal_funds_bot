@@ -9,6 +9,7 @@ from aiogram.types import TelegramObject
 
 from settings import config
 from db import db, Period
+from repl_formatter import fmtr
 
 # Check user 
 class CheckUserMiddleware(BaseMiddleware):
@@ -226,14 +227,21 @@ async def handle_stats_period_chosen(callback: types.CallbackQuery, state: FSMCo
 
 @dp.callback_query( GettingStats.choosing_type )
 async def handle_stats_type_chosen(callback: types.CallbackQuery, state: FSMContext):
-    detailed = bool(callback.data)
+    detailed = callback.data == '1'
     state_data = await state.get_data()
-    stats = db.get_stats( period = Period(int(state_data['period'])),
+    period = Period(int(state_data['period']))
+    stats = db.get_stats( period = period,
                           user_id = callback.from_user.id,
                           detailed = detailed )
-    
+
     await state.clear()
-    await callback.message.edit_text(str(stats))
+    # msg = ''
+    # if len(stats) == 0:
+    #     msg = 'Нет записей'
+    # else:
+    #     msg = str(stats)
+    args = fmtr.format_stats(stats,period,detailed)
+    await callback.message.edit_text(**args)
 
 
 async def main():
