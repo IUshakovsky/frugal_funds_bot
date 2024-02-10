@@ -17,7 +17,7 @@ class Formatter():
             case Period.DAY | Period.WEEK | Period.MONTH:
                 if detailed:
                     data = [ [row['_id']['cat_name'], row['totalValue']] for row in stats]
-                    data.sort(key=lambda x: x[0])
+                    data.sort(key=lambda x: int(x[1]))
                     for line in data:
                         md2_reply += f'*{line[0]}* {line[1]} \n'
                     return {'text': md2_reply, 'parse_mode':ParseMode.MARKDOWN_V2}
