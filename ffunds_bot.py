@@ -4,12 +4,14 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.filters.command import Command
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
+from aiogram.enums import ParseMode
 from typing import Callable, Dict, Any, Awaitable
 from aiogram.types import TelegramObject
 
 from settings import config
 from db import db, Period
 from repl_formatter import fmtr
+
 
 # Check user 
 class CheckUserMiddleware(BaseMiddleware):
@@ -235,11 +237,6 @@ async def handle_stats_type_chosen(callback: types.CallbackQuery, state: FSMCont
                           detailed = detailed )
 
     await state.clear()
-    # msg = ''
-    # if len(stats) == 0:
-    #     msg = 'Нет записей'
-    # else:
-    #     msg = str(stats)
     args = fmtr.format_stats(stats,period,detailed)
     await callback.message.edit_text(**args)
 

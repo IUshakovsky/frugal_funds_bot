@@ -1,53 +1,44 @@
+from aiogram.enums import ParseMode
 from db import Period
 
 class Formatter():
     def __init__(self) -> None:
         pass
     
+    def _get_total_str(self, stats:list) -> str:
+        return str(stats[0]['totalValue'])
+        
     def format_stats(self, stats: list, period: Period, detailed: bool) -> dict:
         if len(stats) == 0:
             return {'text': 'Нет записей'}
         
+        md2_reply = ''
+        match period:
+            case Period.DAY | Period.WEEK | Period.MONTH:
+                if detailed:
+                    data = [ [row['_id']['cat_name'], row['totalValue']] for row in stats]
+                    data.sort(key=lambda x: x[0])
+                    for line in data:
+                        md2_reply += f'*{line[0]}* {line[1]} \n'
+                    return {'text': md2_reply, 'parse_mode':ParseMode.MARKDOWN_V2}
+                else:
+                    return {'text':self._get_total_str(stats)}
+
+            case Period.YEAR:
+                if detailed:
+                    pass    
+                else:
+                    data = [ [row['_id']['month'], row['totalValue']] for row in stats]        
+                    md2_reply = f'*{stats[0]['_id']['year']}*\n'
+                    for line in data:
+                        md2_reply += f'*{line[0]}*:  {line[1]} \n'
+
+                
+                return {'text': md2_reply, 'parse_mode':ParseMode.MARKDOWN_V2}
+
+            case Period.ALL:
+                pass
+        
         return {'text':str(stats)}
 
 fmtr = Formatter()
-
-# from jinja2 import Template
-
-# API_TOKEN = 'your_api_token'
-
-# bot = Bot(token=API_TOKEN)
-# dp = Dispatcher(bot)
-# dp.middleware.setup(LoggingMiddleware())
-
-
-# async def format_table(data):
-#     template = Template("""
-#     <table border="1">
-#         {% for row in data %}
-#         <tr>
-#             {% for cell in row %}
-#             <td>{{ cell }}</td>
-#             {% endfor %}
-#         </tr>
-#         {% endfor %}
-#     </table>
-#     """)
-
-#     html_table = template.render(data=data)
-#     return html_table
-
-
-# @dp.message_handler(commands=['start'])
-# async def start(message: types.Message):
-#     table_data = [
-#         ["Name", "Age", "Country"],
-#         ["John", "25", "USA"],
-#         ["Alice", "30", "UK"],
-#         ["Bob", "22", "Canada"]
-#     ]
-    
-#     html_table = await format_table(table_data)
-    
-#     # Send the HTML table
-#     await message.reply(html_table, parse_mode=types.ParseMode.HTML)

@@ -131,7 +131,8 @@ class Db():
                         }
                     }
                 ]
-                pipeline[1]["$group"]["_id"]["cat_name"] = "$cat_name"  
+                if detailed:
+                    pipeline[1]["$group"]["_id"]["cat_name"] = "$cat_name"  
                 
                 
             case Period.ALL:
@@ -144,14 +145,14 @@ class Db():
                     {
                         "$group": {
                             "_id": {
-                                "year": {"$year": "$date"},
-                                "month": {"$month": "$date"}
+                                "year": {"$year": "$date"}
                             },
                             "totalValue": {"$sum": "$amnt"}
                         }
                     }
                 ]
-                pipeline[1]["$group"]["_id"]["cat_name"] = "$cat_name"  
+                if detailed:
+                    pipeline[1]["$group"]["_id"]["month"] = {"$month": "$date"}  
         
         result = list(self.db['records'].aggregate(pipeline))
         return result
