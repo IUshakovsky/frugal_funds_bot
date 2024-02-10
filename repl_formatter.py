@@ -29,7 +29,7 @@ class Formatter():
                     pass    
                 else:
                     data = [ [row['_id']['month'], row['totalValue']] for row in stats]        
-                    md2_reply = f'*{stats[0]['_id']['year']}*\n'
+                    md2_reply = f"*{stats[0]['_id']['year']}* \n"
                     for line in data:
                         md2_reply += f'*{line[0]}*:  {line[1]} \n'
 
