@@ -133,7 +133,7 @@ class Db():
                 ]
                 if detailed:
                     pipeline[1]["$group"]["_id"]["cat_name"] = "$cat_name"  
-                
+                    del pipeline[1]["$group"]["_id"]["month"]
                 
             case Period.ALL:
                 pipeline = [
