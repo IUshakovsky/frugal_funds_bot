@@ -10,7 +10,7 @@ class Formatter():
         locale.setlocale(locale.LC_ALL, 'ru_RU')
     
     def _format_total_str(self, stats:list, prefix: str = '') -> dict:
-        return { 'text': f'{prefix}: {str(stats[0]['totalValue'])}', 'parse_mode':ParseMode.MARKDOWN_V2 } 
+        return { 'text': f"{prefix}: {str(stats[0]['totalValue'])}", 'parse_mode':ParseMode.MARKDOWN_V2 } 
 
     def _format_cats_values(self, stats:list, prefix: str = '') -> dict:
         md2_reply = ''
