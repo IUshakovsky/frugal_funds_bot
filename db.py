@@ -144,15 +144,13 @@ class Db():
                     },
                     {
                         "$group": {
-                            "_id": {
-                                "year": {"$year": "$date"}
-                            },
+                            "_id": None,
                             "totalValue": {"$sum": "$amnt"}
                         }
                     }
                 ]
                 if detailed:
-                    pipeline[1]["$group"]["_id"]["month"] = {"$month": "$date"}  
+                    pipeline[1]["$group"]["_id"] = {"year": {"$year": "$date"}}
         
         result = list(self.db['records'].aggregate(pipeline))
         return result

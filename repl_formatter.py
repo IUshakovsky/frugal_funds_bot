@@ -27,9 +27,16 @@ class Formatter():
         md2_reply = f"За *{stats[0]['_id']['year']}* год: {total} \n"
         for line in data:
             md2_reply += f'*{calendar.month_abbr[int(line[0])]}*:  {line[1]} \n'
-    
         return {'text': md2_reply, 'parse_mode':ParseMode.MARKDOWN_V2}     
    
+    def _format_years_values(self, stats: list):
+        data = [ [row['_id']['year'], row['totalValue']] for row in stats ]
+        data.sort(key=lambda x: int(x[0]),reverse=True)
+        total = sum([r[1] for r in data])
+        md2_reply = f"*За все время*: {total}\n"
+        for line in data:
+            md2_reply += f'*{line[0]}*: {line[1]}\n'
+        return {'text': md2_reply, 'parse_mode':ParseMode.MARKDOWN_V2}              
     
     def format_stats(self, stats: list, period: Period, detailed: bool) -> dict:
         if len(stats) == 0:
@@ -62,9 +69,9 @@ class Formatter():
 
             case Period.ALL:
                 if detailed:
-                    pass
+                    return self._format_years_values(stats)
                 else:
-                    pass 
+                    return self._format_total_str(stats, '*За все время*') 
         
         return {'text':str(stats)}
 
