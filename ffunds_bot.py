@@ -4,7 +4,6 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.filters.command import Command
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
-from aiogram.enums import ParseMode
 from typing import Callable, Dict, Any, Awaitable
 from aiogram.types import TelegramObject
 
