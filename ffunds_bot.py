@@ -25,7 +25,6 @@ class CheckUserMiddleware(BaseMiddleware):
         else:
             return None
         
-
 bot = Bot(token=config.bot_token.get_secret_value())
 dp = Dispatcher()
 dp.update.outer_middleware(CheckUserMiddleware())
@@ -58,6 +57,9 @@ def create_kb_builder_cats(user_id: int) -> InlineKeyboardBuilder:
         builder.add(types.InlineKeyboardButton(
                                         text = cat[1],
                                         callback_data = cat[1] ))
+    # Cancel button
+    builder.add(types.InlineKeyboardButton(text='<Отмена>', callback_data='srv_cancel'))
+    
     builder.adjust(3)
     return builder
 
@@ -126,6 +128,12 @@ async def handle_input_amnt(message: types.Message, state: FSMContext):
 @dp.message(AddingRecord.inputing_amount)
 async def handle_input_amnt_wrong(message: types.Message):
     await message.reply("🤦🏻‍♂️ сумму введи")    
+
+@dp.callback_query( AddingRecord.choosing_category, F.data == 'srv_cancel' )
+async def choosing_category_cancel_selected(callback: types.CallbackQuery, state: FSMContext):
+    await state.clear()  
+    await callback.message.edit_text('Забыли')
+    await callback.answer()
 
 @dp.callback_query( AddingRecord.choosing_category )
 async def category_chosen(callback: types.CallbackQuery, state: FSMContext):
