@@ -2,15 +2,14 @@ import asyncio
 from aiogram import Bot, Dispatcher, types, F, BaseMiddleware
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.filters.command import Command
-from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
 from typing import Callable, Dict, Any, Awaitable
 from aiogram.types import TelegramObject
 
 from settings import config
+from state import AddingCategory, AddingRecord, DeletingCategory, GettingStats
 from db import db, Period
 from repl_formatter import fmtr
-
 
 # Check user 
 class CheckUserMiddleware(BaseMiddleware):
@@ -74,10 +73,6 @@ async def start(message: types.Message):
     await message.answer('\_(oO)_/')
 
 # Adding category
-class AddingCategory(StatesGroup):
-    inputing_name = State()
-    confirmation = State()
-    
 @dp.message(Command("new_cat"))
 async def cmd_new_category(message: types.Message, state: FSMContext):
     await message.answer('Введи название')
@@ -113,10 +108,6 @@ async def handle_cancel_input_cat_name(message: types.Message, state: FSMContext
     await state.clear()
     
 # Adding record
-class AddingRecord(StatesGroup):
-    inputing_amount = State()
-    choosing_category = State()
-
 @dp.message(Command("add"))
 async def cmd_add(message: types.Message, state: FSMContext):
     cats = db.get_categories(message.from_user.id)
@@ -161,10 +152,6 @@ async def msg_add(message: types.Message, state: FSMContext):
 
 
 # Deleting category
-class DeletingCategory(StatesGroup):
-    choosing_category = State()
-    confirmation = State()
-    
 @dp.message(Command('delete_cat'))
 async def cmd_del_cat(message: types.Message, state: FSMContext):
     cats = db.get_categories(message.from_user.id)
@@ -217,10 +204,6 @@ async def cmd_get_quick_stat(message: types.Message):
     else:
         msg = 'Пока не было расходов'
     await message.answer(msg)
-    
-class GettingStats(StatesGroup):
-    choosing_period = State()
-    choosing_type = State()
     
 @dp.message(Command('get_stat'))
 async def cmd_get_stat(message: types.Message, state: FSMContext):
