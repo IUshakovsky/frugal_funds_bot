@@ -152,6 +152,14 @@ async def category_chosen(callback: types.CallbackQuery, state: FSMContext):
     await state.clear()
     await callback.answer()
 
+# Simple way without command
+@dp.message(F.text.regexp(r'^[\d]+$'))
+async def msg_add(message: types.Message, state: FSMContext):
+    await state.update_data(input = message.text)
+    await message.answer(text='Куда столько?', reply_markup=create_kb_builder_cats(message.from_user.id).as_markup(resize_keyboard=True))
+    await state.set_state(AddingRecord.choosing_category)
+
+
 # Deleting category
 class DeletingCategory(StatesGroup):
     choosing_category = State()

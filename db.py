@@ -1,6 +1,6 @@
 from pymongo.mongo_client import MongoClient
 from settings import config
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta
 from enum import Enum
 
 Period = Enum('Period', ['DAY','WEEK', 'MONTH', 'YEAR', 'ALL'])
@@ -11,7 +11,7 @@ class Db():
     def __init__(self) -> None:
         self.client = MongoClient(config.mongo_uri)
         self.db = self.client[config.db]
-
+        
     def get_categories(self, user_id: int) -> dict:
         coll = self.db.categories
         cats = coll.find({'user_id': user_id})
