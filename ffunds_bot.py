@@ -147,7 +147,7 @@ async def category_chosen(callback: types.CallbackQuery, state: FSMContext):
                   user_id = callback.from_user.id, 
                   amnt    = int(user_data['input']))
 
-    await callback.message.edit_text(f'Записал {user_data['input']} в {callback.data}')
+    await callback.message.edit_text(f'Записал {user_data["input"]} в {callback.data}')
     await state.clear()
     await callback.answer()
 
